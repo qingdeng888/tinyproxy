@@ -16,7 +16,7 @@ jobs:
     - name: Set up MIPS cross-compile environment
       run: |
         sudo apt-get update
-        sudo apt-get install -y gcc-mipsel-linux-gnu g++-mipsel-linux-gnu
+        sudo apt-get install -y gcc-mipsel-linux-gnu g++-mipsel-linux-gnu libc6-dev-mipsel-cross
 
     - name: Configure build
       run: |
