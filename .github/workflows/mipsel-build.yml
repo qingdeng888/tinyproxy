@@ -21,7 +21,7 @@ jobs:
     - name: Configure build
       run: |
         ./autogen.sh
-        ./configure --host=mipsel-linux-gnu CFLAGS="-Os -msoft-float" LDFLAGS="-s"
+        ./configure --host=mipsel-linux-gnu CFLAGS="-Os -mfloat-abi=hard" LDFLAGS="-s"
 
     - name: Compile
       run: make
@@ -31,4 +31,3 @@ jobs:
       with:
         name: tinyproxy-mipsel
         path: src/tinyproxy
-
