@@ -1,33 +1,54 @@
-name: Build MIPS Binary
+name: Build tinyproxy
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  # 添加 workflow_dispatch 事件
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [ mipsle, mipsle-softfloat ]
     steps:
-    - name: Check out code
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
-    - name: Set up MIPS cross-compile environment
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+      with:
+        platforms: all
+
+    - name: Set up build environment for ${{ matrix.arch }}
+      if: matrix.arch == 'mipsle'
       run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc-mipsel-linux-gnu g++-mipsel-linux-gnu libc6-dev-mipsel-cross
-
-    - name: Configure build
+        sudo dpkg --add-architecture mipsle
+        sudo apt update
+        sudo apt install -y crossbuild-essential-mipsle qemu-user-static
+    - name: Set up build environment for ${{ matrix.arch }}
+      if: matrix.arch == 'mipsle-softfloat'
       run: |
-        ./autogen.sh
-        ./configure --host=mipsel-linux-gnu CFLAGS="-Os -mfloat-abi=hard" LDFLAGS="-s"
+        sudo dpkg --add-architecture mipsle
+        sudo apt update
+        sudo apt install -y crossbuild-essential-mipsle qemu-user-static
 
-    - name: Compile
+    - name: Configure for ${{ matrix.arch }}
+      run: |
+        CC=mipsle-linux-gnu-gcc ./configure --host=mipsle-linux-gnu --target=mipsle-linux-gnu AR=mipsle-linux-gnu-ar RANLIB=mipsle-linux-gnu-ranlib --prefix=/usr --sysconfdir=/etc --localstatedir=/var
+      if: matrix.arch == 'mipsle'
+    - name: Configure for ${{ matrix.arch }}
+      run: |
+        CC=mipsle-linux-gnu-gcc -msoft-float ./configure --host=mipsle-linux-gnu --target=mipsle-linux-gnu AR=mipsle-linux-gnu-ar RANLIB=mipsle-linux-gnu-ranlib --prefix=/usr --sysconfdir=/etc --localstatedir=/var
+      if: matrix.arch == 'mipsle-softfloat'
+
+    - name: Build
       run: make
 
-    - name: Upload binary
-      uses: actions/upload-artifact@v2
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
       with:
-        name: tinyproxy-mipsel
-        path: src/tinyproxy
+        name: tinyproxy-${{ matrix.arch }}
+        path: tinyproxy
