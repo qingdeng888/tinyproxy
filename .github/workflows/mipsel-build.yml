@@ -1,0 +1,25 @@
+name: Build MIPS Binary
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - v*
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up MIPS cross-compile environment
+      run: sudo apt-get update && sudo apt-get install -y gcc-mipsel-linux-gnu g++-mipsel-linux-gnu
+    - name: Configure
+      run: ./configure --host=mipsel-linux-gnu CFLAGS="-Os -msoft-float" LDFLAGS="-s"
+    - name: Build
+      run: make
+    - name: Upload binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: tinyproxy-mipsel
+        path: src/tinyproxy
